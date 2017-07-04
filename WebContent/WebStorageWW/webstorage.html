@@ -1,0 +1,217 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<title>Productos</title>
+	
+	<style>
+		a { color: #0068D2; cursor: pointer; }
+		a:link, a:visited { text-decoration: none; color: #0068D2; }
+		a:hover, a:active { text-decoration: underline; color: #0068D2; }
+		body { font: 12px/18px "Lucida Grande", "Lucida Sans Unicode", sans-serif; }
+
+		#products-table { border-collapse: collapse; }
+		#products-table, #products-table th, #products-table td { padding: 8px 16px; text-align: left; border: 0px solid #B9BABE; }
+		#products-table th { font-weight: bold; font-size: 14px; color: #29344B; }
+		#products-table td { color: #000; }
+		#products-table tr:nth-child(2n) { background: #E8EDFF; }
+
+		#products-form { padding: 10px; }
+		.text input, .button input { padding: 5px; margin: 0; border: 1px solid #ccc; -moz-border-radius: 2px; -webkit-border-radius: 2px; border-radius: 2px; }
+		#products-form .item { margin: 3px 0; }
+		#products-form label, #products-form .field { display: inline-block; color: #0C0B07; }
+		#products-form label { width: 110px; font-weight: bold; text-align: right; color: #666; }
+		#products-form .text input { width: 176px; padding: 3px; }
+		#products-form .button { display: inline-block; }
+		#products-form .button-wrapper { padding-left: 113px; }
+		.button input { padding: 4px 8px; color: #343434; background-color: #fdfdfd; background: -moz-linear-gradient(#fdfdfd, #e1e1e1); background: -webkit-gradient(linear, 0 0, 0 100%, from(#fdfdfd), to(#e1e1e1)); }
+		.button-default input { font-weight: bold; color: #fff; background-color: #7ca0c7; background: -moz-linear-gradient(#acc6e1, #7ca0c7); background: -webkit-gradient(linear, 0 0, 0 100%, from(#acc6e1), to(#7ca0c7)); border-color: #5b80b2; }
+	</style>
+</head>
+<body>
+	<h1>Products</h1>
+	<table id="products-table">
+		<tr id="products-head">
+			<th>ID</th>
+			<th>Nombre</th>
+			<th>Precio</th>
+			<th>Cantidad</th>
+			<th>Disponible</th>
+		</tr>
+	</table>
+
+	<form id="products-form">
+		<div class="item text">
+			<label>Nombre:</label>
+			<div class="field"><input type="text" name="nombre" /></div>
+		</div>
+		<div class="item text">
+			<label>Precio:</label>
+			<div class="field"><input type="number" name="precio" /></div>
+		</div>
+		<div class="item text">
+			<label>Cantidad:</label>
+			<div class="field"><input type="number" name="cantidad" /></div>
+		</div>
+		<div class="item text">
+			<label>Disponible:</label>
+			<div class="field"><input type="checkbox" name="disponible" /></div>
+		</div>
+		<div class="button-wrapper">
+			<div class="item button">
+				<div class="field"><input type="button" id="products-op-discard" value="Discard" /></div>
+			</div>
+			<div class="item button button-default">
+				<div class="field"><input type="submit" id="products-op-save" value="Save" /></div>
+			</div>
+		</div>
+		<input type="hidden" name="id_entry" value="0" />
+		<textarea id="textfield" readonly></textarea>
+	</form>
+
+	<script>
+		var Products = {
+			index: window.localStorage.getItem("Products:index"),
+			$table: document.getElementById("products-table"),
+			$form: document.getElementById("products-form"),
+			$button_save: document.getElementById("products-op-save"),
+			$button_discard: document.getElementById("products-op-discard"),
+
+			init: function() {
+				// initialize storage index
+				if (!Products.index) {
+					window.localStorage.setItem("Products:index", Products.index = 1);
+				}
+
+				// initialize form
+				Products.$form.reset();
+				Products.$button_discard.addEventListener("click", function(event) {
+					Products.$form.reset();
+					Products.$form.id_entry.value = 0;
+				}, true);
+				Products.$form.addEventListener("submit", function(event) {
+					var entry = {
+						id: parseInt(this.id_entry.value),
+						nombre: this.nombre.value,
+						precio: this.precio.value,
+						cantidad: this.cantidad.value, 
+						disponible: this.disponible.checked
+					};
+					if (entry.id == 0) { // add
+						Products.storeAdd(entry);
+						Products.tableAdd(entry);
+					}
+					else { // edit
+						Products.storeEdit(entry);
+						Products.tableEdit(entry);
+					}
+
+					this.reset();
+					this.id_entry.value = 0;
+					event.preventDefault();
+				}, true);
+
+				// initialize table
+				if (window.localStorage.length - 1) {
+					var contacts_list = [], i, key;
+					for (i = 0; i < window.localStorage.length; i++) {
+						key = window.localStorage.key(i);
+						if (/Products:\d+/.test(key)) {
+							contacts_list.push(JSON.parse(window.localStorage.getItem(key)));
+						}
+					}
+
+					if (contacts_list.length) {
+						contacts_list
+							.sort(function(a, b) {
+								return a.id < b.id ? -1 : (a.id > b.id ? 1 : 0);
+							})
+							.forEach(Products.tableAdd);
+					}
+				}
+				Products.$table.addEventListener("click", function(event) {
+					var op = event.target.getAttribute("data-op");
+					if (/edit|remove|detalle/.test(op)) {
+						var entry = JSON.parse(window.localStorage.getItem("Products:"+ event.target.getAttribute("data-id")));
+						if (op == "edit") {
+							Products.$form.nombre.value = entry.nombre;
+							Products.$form.precio.value = entry.precio;
+							Products.$form.cantidad.value = entry.cantidad;
+							if (entry.disponible==true){
+							Products.$form.disponible.checked = true;
+							}else{
+								Products.$form.disponible.checked = false;
+							}
+							Products.$form.id_entry.value = entry.id;
+						}
+						else if (op == "remove") {
+							if (confirm('Are you sure you want to remove "'+ entry.nombre +' '+ entry.precio +'" from your product?')) {
+								Products.storeRemove(entry);
+								Products.tableRemove(entry);
+							}
+						}else if (op == "detalle") {
+
+							  var envio=new Worker('envio.js');
+							
+							  var mensaje = window.localStorage.getItem("Products:"+ event.target.getAttribute("data-id"));
+								envio.postMessage(mensaje);
+							  
+							  envio.onmessage=function(event){
+								
+								document.getElementById('textfield').innerHTML=event.data;
+							  };
+						}
+						event.preventDefault();
+					}
+				}, true);
+			},
+
+			storeAdd: function(entry) {
+				entry.id = Products.index;
+				window.localStorage.setItem("Products:index", ++Products.index);
+				window.localStorage.setItem("Products:"+ entry.id, JSON.stringify(entry));
+			},
+			storeEdit: function(entry) {
+				window.localStorage.setItem("Products:"+ entry.id, JSON.stringify(entry));
+			},
+			storeRemove: function(entry) {
+				window.localStorage.removeItem("Products:"+ entry.id);
+			},
+
+			tableAdd: function(entry) {
+				var $tr = document.createElement("tr"), $td, key;
+				for (key in entry) {
+					if (entry.hasOwnProperty(key)) {
+						$td = document.createElement("td");
+						$td.appendChild(document.createTextNode(entry[key]));
+						$tr.appendChild($td);
+					}
+				}
+				$td = document.createElement("td");
+				$td.innerHTML = '<a data-op="edit" data-id="'+ entry.id +'">Edit</a> | <a data-op="remove" data-id="'+ entry.id +'">Remove</a> | <a data-op="detalle" data-id="'+ entry.id +'">Detalle</a>';
+				$tr.appendChild($td);
+				$tr.setAttribute("id", "entry-"+ entry.id);
+				Products.$table.appendChild($tr);
+			},
+			tableEdit: function(entry) {
+				var $tr = document.getElementById("entry-"+ entry.id), $td, key;
+				$tr.innerHTML = "";
+				for (key in entry) {
+					if (entry.hasOwnProperty(key)) {
+						$td = document.createElement("td");
+						$td.appendChild(document.createTextNode(entry[key]));
+						$tr.appendChild($td);
+					}
+				}
+				$td = document.createElement("td");
+				$td.innerHTML = '<a data-op="edit" data-id="'+ entry.id +'">Edit</a> | <a data-op="remove" data-id="'+ entry.id +'">Remove</a> | <a data-op="detalle" data-id="'+ entry.id +'">Detalle</a>';
+				$tr.appendChild($td);
+			},
+			tableRemove: function(entry) {
+				Products.$table.removeChild(document.getElementById("entry-"+ entry.id));
+			}
+		};
+		Products.init();
+	</script>
+</body>
+</html>
