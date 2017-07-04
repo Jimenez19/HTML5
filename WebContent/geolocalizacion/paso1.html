@@ -1,0 +1,22 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<title></title>
+</head>
+<body>
+	<script language="javascript">
+		var loca;
+		function obtener_localizacion() {
+			navigator.geolocation.getCurrentPosition(coordenadas);
+		}
+		function coordenadas(position) {
+			loca = position.coords;
+			console.log(loca);
+			var latitud = position.coords.latitude;
+			var longitud = position.coords.longitude;
+			alert('Tus coordenadas son: (' + latitud + ',' + longitud + ')');
+		}
+	</script>
+	<a href="javascript:obtener_localizacion();">Mostrar Posicion</a>
+</body>
+</html>

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+ <head>
+<style>
+ #for este input:valid { background:pink;}
+ #for input:valid { background:green;}
+ #for input:invalid { background:red;}
+</style>
+</head>
+<body>
+<form id="for">
+ <p>Name: <este><input type="text" pattern="[0-9][A-Z]{3}"  name="name" required></este></p>
+ <p>E-mail: <este><input type="email"  name="email" required></este></p>
+ <p>URL: <input type="url" name="url" required></p>
+ <p>Edad: <input type="number" name="edad"></p>
+ <p>Rango: <input type="range" name="rango"></p>
+ <p>Fecha: <input type="date" name="date"></p>
+ <p>Tiempo: <input type="time" name="time"></p>
+ <p>Color: <input type="color" name="color"></p>
+ <p><input type="submit" value="enviar"></p>
+</form>
+</body>
+</html>
